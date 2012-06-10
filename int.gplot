@@ -1,0 +1,16 @@
+#!/usr/bin/env gnuplot
+
+set terminal png size 1024,768
+set xzeroaxis lt -1
+set title "Cell microtube intersections count (3000nm centrosome)"
+#set xrange [1000:10000]
+#set yrange [0.6:1]
+set xlabel "C"
+set ylabel "Intersections"
+#set mytics 4
+#set mxtics 1
+set grid ytics mytics
+set output "int.png"
+plot "data/int0.data" using 1:2 with lines title "total intersections" lw 2, \
+"data/int1.data" using 1:2 with lines title "internal R/2 intersections" lw 2, \
+"data/int2.data" using 1:2 with lines title "external R/2 intersections" lw 2

@@ -1,0 +1,18 @@
+#!/usr/bin/env gnuplot
+
+set terminal png size 1024,768
+set xzeroaxis lt -1
+set title "Cell fluorescence decline (3000nm centrosome)"
+#set xrange [500:9500]
+#set yrange [0.6:1]
+set xlabel "R, nm"
+set ylabel "Fluorescence"
+#set mytics 4
+#set mxtics 1
+set grid ytics mytics
+set output "experiment.png"
+plot "data/experiments/11.csv" using 1:2 with lines title "11" lw 2, \
+"data/experiments/12.csv" using 1:2 with lines title "12" lw 2, \
+"data/experiments/21.csv" using 1:2 with lines title "21" lw 2, \
+"data/experiments/22.csv" using 1:2 with lines title "22" lc rgb "black" lw 2, \
+"data/experiments/31.csv" using 1:2 with lines title "31" lw 2
