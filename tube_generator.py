@@ -2,6 +2,8 @@
 
 from math import asin, acos, atan, cos, exp, log, pi, sin, sqrt
 import random
+import sys
+import time
 
 def r(point):
   return sqrt(sum([ c**2 for c in point ]))
@@ -84,15 +86,16 @@ class TIntersectionCalcer:
 
 #  *******************************  SECTIONS GENERATORS  *******************************
 
-class TTubeSectionsGenerator:
+class TTube:
   def __init__(self, cell, pos = (0, 0, 0)):
     self.cell = cell
-    self.validate()
     self.direction = (0, 0)
     self.position = pos
-    self.sections_built = 0
+    self.__sections = list()
     self.__t = (0, 0, 0)
     self.__old_position = self.position
+    self.__iteration_stopped = False
+    self.validate()
 
   def validate(self):
     try:
@@ -134,19 +137,25 @@ class TTubeSectionsGenerator:
     return x0
 
   def __iter__(self):
-    return self
+    if self.__sections:
+      while not self.__iteration_stopped:
+        time.sleep(0.001)
+      return self.__sections.__iter__()
+    else:
+      return self
 
   def next(self):
-    assert(self.sections_built <= self.cell.m)
-    if self.sections_built == self.cell.m:
+    assert(len(self.__sections) <= self.cell.m)
+    if len(self.__sections) == self.cell.m:
+      self.__iteration_stopped = True
       raise StopIteration
-    self.sections_built += 1
     addition = self.get_next_part()
     self.__old_position = self.position
     self.position = tuple([ self.__old_position[i] + addition[i] for i in range(0, 3) ])
     if abs(self.position[0]) >= self.cell.cell_height / 2:
       projected_length = sqrt(self.__t[1]**2 + self.__t[2]**2)
       if projected_length < 1:
+        self.__iteration_stopped = True
         raise StopIteration
       multiplier = self.cell.tube_length / projected_length
       addition[0] = -50 if self.position[0] > 0 else 50
@@ -154,6 +163,7 @@ class TTubeSectionsGenerator:
       addition[2] = self.__t[2] * multiplier
       self.position = tuple([ self.__old_position[i] + addition[i] for i in range(0, 3) ])
     if sqrt(self.position[1]**2 + self.position[2]**2) >= self.cell.cell_radius:
+      self.__iteration_stopped = True
       raise StopIteration
 
     # Updating all auxiliary fields
@@ -166,7 +176,8 @@ class TTubeSectionsGenerator:
     if self.__t[0] * self.__t[1] != 0:
       new_direction[1] = atan(self.__t[2] / sqrt(self.__t[0]**2 + self.__t[1]**2))
     self.direction = tuple(new_direction)
-    return (self.__old_position, self.position)
+    self.__sections.append((self.__old_position, self.position))
+    return self.__sections[-1]
 
   def approx_inverse_value(self, p, eps):
     coords = [ self.cell.psi0, 0.5 * pi ]
@@ -183,9 +194,9 @@ class TTubeSectionsGenerator:
   def cumulative_distribution(self, psi):
     return (psi - self.cell.psi0) / (0.5*pi - self.cell.psi0)
 
-class TPowerTubeSectionsGenerator(TTubeSectionsGenerator):
+class TPowerTube(TTube):
   def validate(self):
-    TTubeSectionsGenerator.validate(self)
+    TTube.validate(self)
     try:
       assert(self.cell.c > 0)
     except AttributeError:
@@ -196,9 +207,9 @@ class TPowerTubeSectionsGenerator(TTubeSectionsGenerator):
     x = x**(self.cell.c)
     return x
 
-class TExpTubeSectionsGenerator(TTubeSectionsGenerator):
+class TExpTube(TTube):
   def validate(self):
-    TTubeSectionsGenerator.validate(self)
+    TTube.validate(self)
     try:
       assert(self.cell.c > 1)
     except AttributeError:
@@ -208,20 +219,11 @@ class TExpTubeSectionsGenerator(TTubeSectionsGenerator):
     x = (self.cell.c**((psi - self.cell.psi0) / (0.5*pi - self.cell.psi0)) - 1) / (self.cell.c - 1)
     return x
 
-def construct_generator(cell, generator):
-  if generator == 'exponential':
-    cls = TExpTubeSectionsGenerator
-  elif generator == 'power':
-    cls = TPowerTubeSectionsGenerator
-  elif generator == uniform:
-    cls = TTubeSectionsGenerator
-  return cls(cell)
-
 #  *******************************  CELLS  *******************************
 
 class TCell:
   def __init__(self, n, m, c, psi0, kernel_radius, tube_radius, cell_radius, \
-               cell_height, tube_length, generator_type):
+               cell_height, tube_length, generator_cls):
     self.n = n
     self.m = m
     self.c = c
@@ -231,9 +233,11 @@ class TCell:
     self.cell_radius = cell_radius
     self.cell_height = cell_height
     self.tube_length = tube_length
-    self.generator_type = generator_type
+    self.set_generator_cls(generator_cls)
+    self.__tubes = list()
+    self.__iteration_stopped = False
     self.validate()
-    self.start()
+    self.build()
 
   def validate(self):
     try:
@@ -245,34 +249,52 @@ class TCell:
     except AttributeError:
       pass
 
-  def start(self):
-    self.tubes_built = 0
+  def set_generator_cls(self, generator_cls):
+    if generator_cls == 'exponential':
+      cls = TExpTube
+    elif generator_cls == 'power':
+      cls = TPowerTube
+    elif generator_cls == uniform:
+      cls = TTube
+    self.generator_cls = cls
 
   def __setattr__(self, name, value):
     self.__dict__[name] = value
     self.validate()
 
   def __iter__(self):
-    return self
+    if self.__tubes:
+      while not self.__iteration_stopped:
+        time.sleep(0.001)
+      return self.__tubes.__iter__()
+    else:
+      return self
 
   def next(self):
-    assert(self.tubes_built <= self.n)
-    if self.tubes_built == self.n:
+    assert(len(self.__tubes) <= self.n)
+    if len(self.__tubes) == self.n:
+      self.__iteration_stopped = True
+      sys.stderr.write('DONE GENERATING\n')
       raise StopIteration
-    self.tubes_built += 1
     p = (0, 0, 0)
     if self.kernel_radius != 0:
       radius = self.kernel_radius * sqrt(random.random())
       phi = 2 * pi * random.random()
       h = 0.9 * self.cell_height * random.random() - 0.45 * self.cell_height
       p = (h, radius * sin(phi), radius * cos(phi))
-    self.generator = construct_generator(self, self.generator_type)
-    return self.generator
+    self.__tubes.append(self.generator_cls(self))
+    return self.__tubes[-1]
 
   def info(self):
     out  = str(self.cell_height) + '\t' + str(self.cell_radius) + '\n'
     out += str(self.tube_length) + '\t' + str(self.tube_radius) + '\n'
     return out
+
+  def build(self):
+    if not self.__iteration_stopped and not self.__tubes:
+      for tube in self:
+        for section in tube:
+          pass
 
 """
 def generate_tube_part_uniform(start, length):

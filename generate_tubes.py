@@ -91,19 +91,13 @@ if __name__ == '__main__':
   calc_fl = args.calc_fl
   calc_int = args.calc_int
   print_tubes = not (calc_fl or calc_int)
-  cell = TCell(n = args.n, m = args.m, c = args.c, psi0 = args.psi0, \
-               kernel_radius = args.kernel_radius, tube_radius = args.tube_radius, \
-               cell_radius = args.cell_radius, cell_height = args.cell_height, \
-               tube_length = args.tube_length, generator_type = 'power')
-  if print_tubes:
-    sys.stdout.write(cell.info())
   x = args.x
   if calc_int:
     calc_fl = False
     x = 20
   fl_calcer = None
   if calc_fl:
-    fl_calcer = TFluorCalcer(cell.cell_radius, cell.cell_radius / 200.0)
+    fl_calcer = TFluorCalcer(args.cell_radius, args.cell_radius / 200.0)
   int_out = None
   if calc_int:
     int_out = [ open('data/int0.data', 'w'), \
@@ -112,17 +106,25 @@ if __name__ == '__main__':
               ]
   for iteration in range(x):
     int_calcer = None
+    cell_c = args.c
     if calc_int:
       #cell.c = iteration + 1.0) / 2
-      cell.c = 0.1 + 2**iteration
+      cell_c = 0.1 + 2**iteration
       int_calcer = TIntersectionCalcer(cell.cell_radius, cell.tube_radius, cell.tube_length / 10)
-    cell.start()
+    cell = TCell(n = args.n, m = args.m, c = args.c, psi0 = args.psi0, \
+                 kernel_radius = args.kernel_radius, tube_radius = args.tube_radius, \
+                 cell_radius = args.cell_radius, cell_height = args.cell_height, \
+                 tube_length = args.tube_length, generator_cls = 'power')
+    if print_tubes:
+      sys.stdout.write(cell.info())
     for tube in cell:
       if print_tubes:
         print
-      print '\t'.join([ str(x) for x in [tube.position[2], tube.position[1], tube.position[0]]])
-      for old_position, p in cell.generator:
+      first_pass = True
+      for old_position, p in tube:
         if print_tubes:
+          if first_pass:
+            print '\t'.join([ str(x) for x in [old_position[2], old_position[1], old_position[0]]])
           print '\t'.join([ str(x) for x in [p[2], p[1], p[0]]])
         if calc_fl:
           fl_calcer.add((old_position[1:3], p[1:3]))
@@ -135,4 +137,3 @@ if __name__ == '__main__':
   if calc_fl:
     for i, x in enumerate(fl_calcer.get_fl()):
       print (i + 1) * fl_calcer.step / 10, x * 1000
-  sys.stderr.write('DONE GENERATING\n')
