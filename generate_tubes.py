@@ -110,27 +110,17 @@ if __name__ == '__main__':
     if calc_int:
       #cell.c = iteration + 1.0) / 2
       cell_c = 0.1 + 2**iteration
-      int_calcer = TIntersectionCalcer(cell.cell_radius, cell.tube_radius, cell.tube_length / 10)
+      int_calcer = TIntersectionCalcer(args.cell_radius, args.tube_radius, args.tube_length / 10)
     cell = TCell(n = args.n, m = args.m, c = args.c, psi0 = args.psi0, \
                  kernel_radius = args.kernel_radius, tube_radius = args.tube_radius, \
                  cell_radius = args.cell_radius, cell_height = args.cell_height, \
                  tube_length = args.tube_length, generator_cls = 'power')
     if print_tubes:
-      sys.stdout.write(cell.info())
-    for tube in cell:
-      if print_tubes:
-        print
-      first_pass = True
-      for old_position, p in tube:
-        if print_tubes:
-          if first_pass:
-            print '\t'.join([ str(x) for x in [old_position[2], old_position[1], old_position[0]]])
-          print '\t'.join([ str(x) for x in [p[2], p[1], p[0]]])
-        if calc_fl:
-          fl_calcer.add((old_position[1:3], p[1:3]))
-        if calc_int:
-          int_calcer.add((old_position[1:3], p[1:3]))
+      print cell
+    if calc_fl:
+      fl_calcer.add_cell(cell)
     if calc_int:
+      int_calcer.add_cell(cell)
       int_out[0].write('%f %f\n' % (log(cell.c, 2), int_calcer.intersections[0]))
       int_out[1].write('%f %f\n' % (log(cell.c, 2), int_calcer.intersections[1]))
       int_out[2].write('%f %f\n' % (log(cell.c, 2), int_calcer.intersections[2]))

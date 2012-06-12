@@ -14,16 +14,20 @@ class TFluorCalcer:
   def __init__(self, r, step):
     self.r = r
     self.step = step
-    self.n = int(r / step) - 1
-    self.__data = [0.0] * self.n
+    self.__data = [0.0] * (int(r / step) - 1)
 
-  def add(self, points):
+  def add_cell(self, cell):
+    for tube in cell:
+      for i in range(len(tube) - 1):
+        self.add_section([ x[1:3] for x in tube[i:i+2] ])
+
+  def add_section(self, points):
     assert(len(points) == 2)
     rads = [ sqrt(sum([ c**2 for c in p ])) for p in points ]
     rads.sort()
     rads = [ int(r / self.step + (1 if r != r / self.step else 0)) for r in rads ]
     c = rads[0]
-    for i in range(max((1, rads[0])), min((rads[1], self.n + 1))):
+    for i in range(max((1, rads[0])), min((rads[1], len(self.__data) + 1))):
       self.__data[i - 1] += 1
 
   def get_fl(self):
@@ -73,7 +77,12 @@ class TIntersectionCalcer:
         self.intersections[0] += 1
         self.intersections[1 if r((x, y)) < self.cell_radius / 2 else 2] += 1
 
-  def add(self, line):
+  def add_cell(self, cell):
+    for tube in cell:
+      for i in range(len(tube) - 1):
+        self.add_section([ x[1:3] for x in tube[i:i+2] ])
+
+  def add_section(self, line):
     assert(len(line) == 2)
     rads = [ sqrt(sum([ c**2 for c in point ])) for point in line ]
     rads.sort()
@@ -91,11 +100,12 @@ class TTube:
     self.cell = cell
     self.direction = (0, 0)
     self.position = pos
-    self.__sections = list()
+    self.__sections = [ pos ]
     self.__t = (0, 0, 0)
     self.__old_position = self.position
     self.__iteration_stopped = False
     self.validate()
+    self.build()
 
   def validate(self):
     try:
@@ -103,18 +113,9 @@ class TTube:
     except AttributeError:
       pass
 
-  """
-    def __setattr__(self, name, value):
-      self.__dict__[name] = value
-      good_len = 0
-      if name == 'direction':
-        good_len = 2
-      elif name == 'position':
-        good_len = 3
-      else:
-        return
-      assert(type(self.__getattr__(name)) == tuple and len(self.direction) == good_len)
-  """
+  def build(self):
+    for section in self:
+      pass
 
   def get_next_part(self):
     phi = 2 * pi * random.random()
@@ -137,16 +138,31 @@ class TTube:
     return x0
 
   def __iter__(self):
-    if self.__sections:
-      while not self.__iteration_stopped:
-        time.sleep(0.001)
+    if len(self.__sections) > 1:
+      self.wait()
       return self.__sections.__iter__()
     else:
       return self
 
+  def __len__(self):
+    self.wait()
+    return self.__sections.__len__()
+
+  def __getitem__(self, key):
+    return self.__sections.__getitem__(key)
+
+  def __str__(self):
+    self.wait()
+    out = '\n'.join([ '\t'.join([ str(x) for x in [p[2], p[1], p[0]]]) for p in self ])
+    return out
+
+  def wait(self):
+    while not self.__iteration_stopped:
+      time.sleep(0.001)
+
   def next(self):
-    assert(len(self.__sections) <= self.cell.m)
-    if len(self.__sections) == self.cell.m:
+    assert(len(self.__sections) <= self.cell.m + 1)
+    if len(self.__sections) == self.cell.m + 1:
       self.__iteration_stopped = True
       raise StopIteration
     addition = self.get_next_part()
@@ -176,7 +192,7 @@ class TTube:
     if self.__t[0] * self.__t[1] != 0:
       new_direction[1] = atan(self.__t[2] / sqrt(self.__t[0]**2 + self.__t[1]**2))
     self.direction = tuple(new_direction)
-    self.__sections.append((self.__old_position, self.position))
+    self.__sections.append(self.position)
     return self.__sections[-1]
 
   def approx_inverse_value(self, p, eps):
@@ -264,11 +280,28 @@ class TCell:
 
   def __iter__(self):
     if self.__tubes:
-      while not self.__iteration_stopped:
-        time.sleep(0.001)
+      self.wait()
       return self.__tubes.__iter__()
     else:
       return self
+
+  def __len__(self):
+    return self.__tubes.__len__()
+
+  def __getitem__(self, key):
+    return self.__tubes.__getitem__(key)
+
+  def __str__(self):
+    self.wait()
+    out  = str(self.cell_height) + '\t' + str(self.cell_radius) + '\n'
+    out += str(self.tube_length) + '\t' + str(self.tube_radius) + '\n'
+    out += '\n'
+    out += '\n\n'.join([ tube.__str__() for tube in self.__tubes ])
+    return out
+
+  def wait(self):
+    while not self.__iteration_stopped:
+      time.sleep(0.001)
 
   def next(self):
     assert(len(self.__tubes) <= self.n)
@@ -293,8 +326,7 @@ class TCell:
   def build(self):
     if not self.__iteration_stopped and not self.__tubes:
       for tube in self:
-        for section in tube:
-          pass
+        pass
 
 """
 def generate_tube_part_uniform(start, length):
