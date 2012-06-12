@@ -14,12 +14,16 @@ class TFluorCalcer:
   def __init__(self, r, step):
     self.r = r
     self.step = step
-    self.__data = [0.0] * (int(r / step) - 1)
+    self.__data = [ list() for i in range(int(r / step) - 1) ]
 
   def add_cell(self, cell):
+    for measurements in self.__data:
+      measurements.append(0.0)
     for tube in cell:
       for i in range(len(tube) - 1):
         self.add_section([ x[1:3] for x in tube[i:i+2] ])
+    for idx, measurements in enumerate(self.__data):
+      measurements[-1] /= 2 * pi * self.step * (idx + 1)
 
   def add_section(self, points):
     assert(len(points) == 2)
@@ -28,10 +32,14 @@ class TFluorCalcer:
     rads = [ int(r / self.step + (1 if r != r / self.step else 0)) for r in rads ]
     c = rads[0]
     for i in range(max((1, rads[0])), min((rads[1], len(self.__data) + 1))):
-      self.__data[i - 1] += 1
+      self.__data[i - 1][-1] += 1
 
   def get_fl(self):
-    return [ x / (2 * pi * self.step * (i + 1)) for i, x in enumerate(self.__data) ]
+    res = [ [0.0] * 2 for i in range(len(self.__data)) ]
+    for idx, measurements in enumerate(self.__data):
+      res[idx][0] = sum(measurements) / len(measurements)
+      res[idx][1] = sum([ (m - res[idx][0])**2 for m in measurements ]) / len(measurements)
+    return res
 
 class TIntersectionCalcer:
   def __init__(self, cell_radius, tube_radius, step):

@@ -126,4 +126,4 @@ if __name__ == '__main__':
       int_out[2].write('%f %f\n' % (log(cell.c, 2), int_calcer.intersections[2]))
   if calc_fl:
     for i, x in enumerate(fl_calcer.get_fl()):
-      print (i + 1) * fl_calcer.step / 10, x * 1000
+      print (i + 1) * fl_calcer.step / 10, x[0] * 1000#, x[1]

@@ -3,7 +3,7 @@
 set terminal png size 1024,768
 set xzeroaxis lt -1
 set title "Cell fluorescence decline (3000nm centrosome)"
-set xrange [500:9500]
+set xrange [50:950]
 #set yrange [0.6:1]
 set xlabel "R, nm"
 set ylabel "Fluorescence"
