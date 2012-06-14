@@ -8,6 +8,39 @@ import time
 def r(point):
   return sqrt(sum([ c**2 for c in point ]))
 
+class TFunctionInterpolator:
+  def __init__(self):
+    self.__data = []
+    self.sorted = True
+
+  def __setitem__(self, key, value):
+    self.__data.append((float(key), float(value)))
+    self.sorted = False
+
+  def sort(self):
+    self.__data.sort()
+    self.sorted = True
+
+  def __getitem__(self, key):
+    if len(self.__data) < 2:
+      raise IndexError
+    beg = 0
+    end = len(self.__data) - 1
+    if key < self.__data[beg][0] or key > self.__data[end][0]:
+      raise IndexError
+    while end - beg > 1:
+      mid = (end + beg) / 2
+      if key < self.__data[mid][0]:
+        end = mid
+      elif key > self.__data[mid][0]:
+        beg = mid
+      else:
+        return self.__data[mid][1]
+    assert(key >= self.__data[beg][0] and key <= self.__data[end][0])
+    alpha = (key - self.__data[beg][0]) / (self.__data[end][0] - self.__data[beg][0])
+    assert(alpha >= 0 and alpha <= 1)
+    return self.__data[beg][1] * alpha + self.__data[end][1] * (1 - alpha)
+
 #  *******************************  CALCULATORS  *******************************
 
 class TFluorCalcer:
@@ -32,7 +65,7 @@ class TFluorCalcer:
     rads = [ int(r / self.step + (1 if r != r / self.step else 0)) for r in rads ]
     c = rads[0]
     for i in range(max((1, rads[0])), min((rads[1], len(self.__data) + 1))):
-      self.__data[i - 1][-1] += 1
+      self.__data[i - 1][-1] += 1000
 
   def get_fl(self):
     res = [ [0.0] * 2 for i in range(len(self.__data)) ]
@@ -336,54 +369,33 @@ class TCell:
       for tube in self:
         pass
 
-"""
-def generate_tube_part_uniform(start, length):
-  phi = 2 * pi * random.random()
-  psi = asin(2 * random.random() - 1)
-  r = cos(psi) * length
-  delta = [ cos(phi) * r, sin(phi) * r, sin(psi) * length ]
-  return [ start[i] + delta[i] for i in range(0, 3) ]
+  def draw(self):
+    import visual
 
-def cumulative_distribution(c, psi0, psi):
-  #x = (c**((psi - psi0) / (0.5*pi - psi0)) - 1) / (c - 1)
-  #return x
-  x = (psi - psi0) / (0.5*pi - psi0)
-  x = x**c
-  return x
-  x = (0.25 * log(2))**(1/c)
-  x /= 0.5 * pi - psi0
-  x *= psi
-  x -= psi0
-  return exp(4 * (x**c)) - 1
-
-def approx_inverse_value(p, c, psi0, eps):
-  coords = [ psi0, 0.5 * pi ]
-  while True:
-    mean = 0.5 * sum(coords)
-    if cumulative_distribution(c, psi0, coords[1]) - \
-      cumulative_distribution(c, psi0, coords[0]) < eps:
-      return mean
-    if cumulative_distribution(c, psi0, mean) > p:
-      coords[1] = mean
-    else:
-      coords[0] = mean
-
-def generate_tube_part_linear(length, c, psi0, direction, max_sin=0):
-  phi = 2 * pi * random.random()
-  psi = 0
-  if max_sin != 0:
-    psi = asin(2 * max_sin * random.random() - max_sin)
-  else:
-    psi = approx_inverse_value(random.random(), c, psi0, 0.0001)
-  r = cos(psi) * length
-  x2 = [ cos(phi) * r, sin(phi) * r, sin(psi) * length ]
-  x1 = [0]*3
-  x1[0] = x2[2] * sin(0.5 * pi - direction[1]) + x2[0] * cos(0.5 * pi - direction[1])
-  x1[1] = x2[1]
-  x1[2] = x2[2] * cos(0.5 * pi - direction[1]) - x2[0] * sin(0.5 * pi - direction[1])
-  x0 = [0]*3
-  x0[0] = x1[0] * cos(direction[0]) - x1[1] * sin(direction[0])
-  x0[1] = x1[0] * sin(direction[0]) + x1[1] * cos(direction[0])
-  x0[2] = x1[2]
-  return x0
-"""
+    visual.scene.background = (0.6, 0.6, 0.6)
+    """visual.cylinder(pos=(0, 0, 0),
+             axis=(1000, 0, 0),
+             radius=2,
+             color=visual.color.red)
+    visual.cylinder(pos=(0, 0, 0),
+             axis=(0, 1000, 0),
+             radius=2,
+             color=visual.color.green)
+    visual.cylinder(pos=(0, 0, 0),
+             axis=(0, 0, 1000),
+             radius=2,
+             color=visual.color.blue)"""
+    visual.cylinder(pos=(0, 0, -0.5 * self.cell_height),
+                    axis=(0, 0, self.cell_height),
+                    radius=self.cell_radius,
+                    color=visual.color.blue,
+                    opacity=0.25)
+    #visual.sphere(pos=(0, 0, 0), radius=50, color=visual.color.green)
+    for tube in self.__tubes:
+      for i in range(len(tube) - 1):
+        p1, p2 = [ (p[2], p[1], p[0]) for p in tube[i:i+2] ]
+        direction = [p2[i] - p1[i] for i in range(3)]
+        visual.cylinder(pos=p1,
+                        axis=direction,
+                        radius=self.tube_radius,
+                        color=visual.color.red)

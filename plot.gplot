@@ -11,8 +11,9 @@ set ylabel "Fluorescence"
 #set mxtics 1
 set grid ytics mytics
 set output "plot.png"
-plot "data/10.data" using 1:2 with lines title "C = 10" lw 2, \
-"data/5.data" using 1:2 with lines title "C = 5" lw 2, \
-"data/2.5.data" using 1:2 with lines title "C = 2.5" lw 2, \
-"data/1.data" using 1:2 with lines title "C = 1" lc rgb "black" lw 2, \
-"data/0.5.data" using 1:2 with lines title "C = 0.5" lw 2
+set pointsize 0
+plot "data/10.data" using 1:2 with lines title "C = 10", \
+"data/5.data" using 1:2 with lines title "C = 5", \
+"data/2.5.data" using 1:2 with lines title "C = 2.5", \
+"data/1.data" using 1:2 with lines title "C = 1" lc rgb "black", \
+"data/0.5.data" using 1:2 with lines title "C = 0.5"
