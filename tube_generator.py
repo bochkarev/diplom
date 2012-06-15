@@ -8,7 +8,7 @@ import time
 def r(point):
   return sqrt(sum([ c**2 for c in point ]))
 
-class TFunctionInterpolator:
+class TInterpolatedFunction:
   def __init__(self):
     self.__data = []
     self.sorted = True
@@ -24,6 +24,8 @@ class TFunctionInterpolator:
   def __getitem__(self, key):
     if len(self.__data) < 2:
       raise IndexError
+    if not self.sorted:
+      self.sort()
     beg = 0
     end = len(self.__data) - 1
     if key < self.__data[beg][0] or key > self.__data[end][0]:
@@ -39,7 +41,7 @@ class TFunctionInterpolator:
     assert(key >= self.__data[beg][0] and key <= self.__data[end][0])
     alpha = (key - self.__data[beg][0]) / (self.__data[end][0] - self.__data[beg][0])
     assert(alpha >= 0 and alpha <= 1)
-    return self.__data[beg][1] * alpha + self.__data[end][1] * (1 - alpha)
+    return alpha * self.__data[beg][1] + (1 - alpha) * self.__data[end][1]
 
 #  *******************************  CALCULATORS  *******************************
 
@@ -137,7 +139,7 @@ class TIntersectionCalcer:
 #  *******************************  SECTIONS GENERATORS  *******************************
 
 class TTube:
-  def __init__(self, cell, pos = (0, 0, 0)):
+  def __init__(self, cell, pos=(0, 0, 0)):
     self.cell = cell
     self.direction = (0, 0)
     self.position = pos
@@ -356,7 +358,7 @@ class TCell:
       phi = 2 * pi * random.random()
       h = 0.9 * self.cell_height * random.random() - 0.45 * self.cell_height
       p = (h, radius * sin(phi), radius * cos(phi))
-    self.__tubes.append(self.generator_cls(self))
+    self.__tubes.append(self.generator_cls(self, p))
     return self.__tubes[-1]
 
   def info(self):

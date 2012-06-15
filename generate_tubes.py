@@ -4,6 +4,7 @@ from math import asin, acos, atan, cos, exp, log, pi, sin, sqrt
 import random
 import argparse
 import sys
+import os.path
 from tube_generator import *
 
 def main():
@@ -40,26 +41,22 @@ def main():
                       help='starting value for microtube psi angle')
   parser.add_argument('-x', dest='x', action='store', default=1, type=int,
                       help='number of experiments')
+  parser.add_argument('-M', '--match', dest='match', action='store', type=str, default='',
+                      help='match parameters with experimental data from file')
   args = parser.parse_args()
-  draw_cell = not (args.calc_fl or args.calc_int or args.print_cell)
-  if args.calc_int:
-    args.calc_fl = False
-    args.x = 20
-  fl_calcer = None
-  if args.calc_fl:
-    fl_calcer = TFluorCalcer(args.cell_radius, args.cell_radius / 200.0)
-  int_out = None
+  draw_cell = not (args.calc_fl or args.calc_int or args.print_cell or args.match)
   if args.calc_int:
     int_out = [ open('data/int0.data', 'w'), \
                 open('data/int1.data', 'w'), \
                 open('data/int2.data', 'w')\
               ]
+    args.x = 20
+  elif args.calc_fl:
+    fl_calcer = TFluorCalcer(args.cell_radius, args.cell_radius / 200.0)
   for iteration in range(args.x):
-    int_calcer = None
     cell_c = args.c
     if args.calc_int:
-      #cell.c = iteration + 1.0) / 2
-      cell_c = 0.1 + 2**iteration
+      cell.c = (iteration + 1.0) / 2
       int_calcer = TIntersectionCalcer(args.cell_radius, args.tube_radius, args.tube_length / 10)
     cell = TCell(n=args.n, m=args.m, c=args.c, psi0=args.psi0, \
                  kernel_radius=args.kernel_radius, tube_radius=args.tube_radius, \
@@ -67,9 +64,9 @@ def main():
                  tube_length=args.tube_length, generator_cls='power')
     if args.print_cell:
       print cell
-    if args.calc_fl:
+    elif args.calc_fl:
       fl_calcer.add_cell(cell)
-    if args.calc_int:
+    elif args.calc_int:
       int_calcer.add_cell(cell)
       int_out[0].write('%f %f\n' % (log(cell.c, 2), int_calcer.intersections[0]))
       int_out[1].write('%f %f\n' % (log(cell.c, 2), int_calcer.intersections[1]))
