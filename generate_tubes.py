@@ -65,6 +65,8 @@ def main():
       fl_calcer.add_cell(cell)
     for i, x in enumerate(fl_calcer.get_fl()):
       print (i + 1) * fl_calcer.step / 10, x[0]#, x[1]
+  elif args.match:
+    pass
   else:
     cell = TCell(vars(args), 'power')
     if args.print_cell:
