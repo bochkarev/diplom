@@ -110,7 +110,8 @@ class TIntersectionCalcer:
     y = a1 * x + b1
     if r((x, y)) < i * self.step or r((x, y)) >= (i + 1) * self.step:
       return
-    if x < max(( min((line[0][0], line[1][0])), min((line2[0][0], line2[1][0])))) or x > min((max((line[0][0], line[1][0])), max((line2[0][0], line2[1][0])))):
+    if x < max((min((line[0][0], line[1][0])), min((line2[0][0], line2[1][0])))) or \
+       x > min((max((line[0][0], line[1][0])), max((line2[0][0], line2[1][0])))):
       return
     else:
       k = int((x + self.cell_radius) / 10)
