@@ -50,33 +50,28 @@ def main():
                 open('data/int1.data', 'w'), \
                 open('data/int2.data', 'w')\
               ]
-    args.x = 20
-  elif args.calc_fl:
-    fl_calcer = TFluorCalcer(args.cell_radius, args.cell_radius / 200.0)
-  for iteration in range(args.x):
-    cell_c = args.c
-    if args.calc_int:
-      cell.c = (iteration + 1.0) / 2
+    for iteration in range(20):   # Number of experiments
       int_calcer = TIntersectionCalcer(args.cell_radius, args.tube_radius, args.tube_length / 10)
-    cell = TCell(n=args.n, m=args.m, c=args.c, psi0=args.psi0, \
-                 kernel_radius=args.kernel_radius, tube_radius=args.tube_radius, \
-                 cell_radius=args.cell_radius, cell_height=args.cell_height, \
-                 tube_length=args.tube_length, generator_cls='power')
-    if args.print_cell:
-      print cell
-    elif args.calc_fl:
-      fl_calcer.add_cell(cell)
-    elif args.calc_int:
+      cell_c = (iteration + 1.0) / 2
+      cell = TCell(vars(args), 'power', c=cell_c)
       int_calcer.add_cell(cell)
       int_out[0].write('%f %f\n' % (log(cell.c, 2), int_calcer.intersections[0]))
       int_out[1].write('%f %f\n' % (log(cell.c, 2), int_calcer.intersections[1]))
       int_out[2].write('%f %f\n' % (log(cell.c, 2), int_calcer.intersections[2]))
-  if args.calc_fl:
+  elif args.calc_fl:
+    fl_calcer = TFluorCalcer(args.cell_radius, args.cell_radius / 200.0)
+    for iteration in range(args.x):
+      cell = TCell(vars(args), 'power')
+      fl_calcer.add_cell(cell)
     for i, x in enumerate(fl_calcer.get_fl()):
       print (i + 1) * fl_calcer.step / 10, x[0]#, x[1]
-  if draw_cell:
-    cell.draw()
-    sys.stderr.write('DONE DRAWING\n')
+  else:
+    cell = TCell(vars(args), 'power')
+    if args.print_cell:
+      print cell
+    else:
+      cell.draw()
+      sys.stderr.write('DONE DRAWING\n')
 
 if __name__ == '__main__':
   main()

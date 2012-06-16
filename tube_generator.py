@@ -282,17 +282,13 @@ class TExpTube(TTube):
 #  *******************************  CELLS  *******************************
 
 class TCell:
-  def __init__(self, n, m, c, psi0, kernel_radius, tube_radius, cell_radius, \
-               cell_height, tube_length, generator_cls):
-    self.n = n
-    self.m = m
-    self.c = c
-    self.psi0 = psi0
-    self.kernel_radius = kernel_radius
-    self.tube_radius = tube_radius
-    self.cell_radius = cell_radius
-    self.cell_height = cell_height
-    self.tube_length = tube_length
+  def __init__(self, args, generator_cls, **more_args):
+    for s in ('n', 'm', 'c', 'psi0', 'kernel_radius', 'tube_radius', \
+              'cell_radius', 'cell_height', 'tube_length'):
+      if s in more_args:
+        self.__setattr__(s, more_args[s])
+      else:
+        self.__setattr__(s, args[s])
     self.set_generator_cls(generator_cls)
     self.__tubes = list()
     self.__iteration_stopped = False
