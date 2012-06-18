@@ -12,7 +12,7 @@ set ylabel "Fluorescence"
 set grid ytics mytics
 set output "plot.png"
 set pointsize 0
-plot "data/experiments/32.csv" using 1:2 with lines title "C = 10", \
+plot "data/experiments/12.csv" using 1:2 with lines title "C = 10", \
 "data/1.5.data" using 1:2 with lines title "C = 1.5", \
 "data/4.data" using 1:2 with lines title "C = 4", \
 "data/1.data" using 1:2 with lines title "C = 1" lc rgb "black", \

@@ -297,6 +297,10 @@ class TCell:
 
   def validate(self):
     try:
+      assert(self.kernel_radius >= 0)
+    except AttributeError:
+      pass
+    try:
       assert(self.kernel_radius <= self.cell_radius)
     except AttributeError:
       pass
@@ -347,7 +351,6 @@ class TCell:
     assert(len(self.__tubes) <= self.n)
     if len(self.__tubes) == self.n:
       self.__iteration_stopped = True
-      sys.stderr.write('DONE GENERATING\n')
       raise StopIteration
     p = (0, 0, 0)
     if self.kernel_radius != 0:
